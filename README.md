@@ -8,6 +8,7 @@ Allows you to enter in a key and a search term and the bot will get the results 
 
 * [Discord Bot Token](https://discordpy.readthedocs.io/en/stable/discord.html)
 * [Google Sheets API Key](https://developers.google.com/workspace/guides/create-credentials)
+   * You will also need to enable the Google Sheets API
 * Pip Packages
     * discord: `pip install -U discord.py`
     * requests: `pip install requests`
