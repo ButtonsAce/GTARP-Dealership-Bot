@@ -142,7 +142,7 @@ async def on_message(message):
                     description=spreadsheet_info['name'], 
                     price=spreadsheet_info['price'],
                     vclass=spreadsheet_info['class'],
-                    seats=spreadsheet_info['seats'] if 'seats' in api_info else '',
+                    seats=spreadsheet_info['seats'] if 'seats' in api_info else spreadsheet_info['seats'],
                     tspeed=api_info['topSpeed']['mph'] if 'topSpeed' in api_info and 'mph' in api_info['topSpeed'] else '',
                     speed=api_info['speed'] if 'speed' in api_info else '',
                     acceleration=api_info['acceleration'] if 'acceleration' in api_info else '',
