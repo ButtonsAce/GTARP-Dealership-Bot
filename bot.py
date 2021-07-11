@@ -58,7 +58,7 @@ def get_info_from_spreedsheet(search):
         key = 1
         found = False
         for value in cars:
-            if search in value:
+            if search in value[0]:
                 found = True
                 break
             key = key + 1
