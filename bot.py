@@ -58,10 +58,19 @@ def get_info_from_spreedsheet(search):
         key = 1
         found = False
         for value in cars:
-            if search in value[0]:
+            if search in value:
                 found = True
                 break
             key = key + 1
+        
+        #If not found, lets search again via substrings
+        if not found:
+            key = 1
+            for value in cars:
+                if search in value[0]:
+                    found = True
+                    break
+                key = key + 1
 
         #Just a case in case it doesn't find it
         if not found:
@@ -134,6 +143,10 @@ async def on_message(message):
 
             api_info = get_info_from_api(search)
             spreadsheet_info = get_info_from_spreedsheet(search)
+            
+            #If the API returned false, but we got information from the spreadsheet; lets search the API with the spreadsheet name
+            if api_info == False and spreadsheet_info != False:
+                api_info = get_info_from_api(spreadsheet_info['name'].lower())
 
             #If both the API and spreadsheet return valid values, proceed to use both
             if api_info != False and spreadsheet_info != False:  
