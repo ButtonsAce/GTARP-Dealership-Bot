@@ -23,12 +23,12 @@ EMBED_COLOR = 0x8f030f
 GOOGLE_SPREADSHEET_SHEET = 'Vehicles'
 GOOGLE_SPREADSHEET_SEARCH_COLUMN = 'B'
 GOOGLE_SPREADSHEET_COLUMN = {
-    'NAME': 0,
-    'CLASS': 5,
-    'SEATS': 6,
-    'PRICE': 3,
-    'BRAND': 9,
-    'IMAGE': 7
+    'NAME': 0, #A
+    'CLASS': 5, #F
+    'SEATS': 6, #G
+    'PRICE': 3, #D
+    'BRAND': 9, #J
+    'IMAGE': 7 #H
 }
 ####################################################
 #################### END BLOCK #####################
