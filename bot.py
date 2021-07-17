@@ -30,6 +30,14 @@ GOOGLE_SPREADSHEET_COLUMN = {
     'BRAND': 9, #J
     'IMAGE': 7 #H
 }
+
+#API URLS
+GOOGLE_SPREADSHEET_API = 'https://sheets.googleapis.com/v4/spreadsheets/'
+
+GTA_API_URL = 'https://gta.now.sh/api/'
+GTA_VEHICLE_INFO_URL = GTA_API_URL+'vehicles/'
+GTA_MANUFACTURER_LOGO_URL = GTA_API_URL+'vehicles/manufacturer/'
+
 ####################################################
 #################### END BLOCK #####################
 ####################################################
@@ -38,48 +46,63 @@ GOOGLE_SPREADSHEET_COLUMN = {
 #Not all the information is here, but we do get exclusive information here
 def get_info_from_api(search):
     try:
-        request = requests.get('https://gta.now.sh/api/vehicles/'+search)
+        search = search.lower()
+        request = requests.get(GTA_VEHICLE_INFO_URL+search)
         return request.json()
     except:
         return False
-    
+
+#Uses the GTA API to get the manufacturer's logo
+def get_manufacturer_logo_from_api(manufacturer):
+    try:
+        manufacturer = manufacturer.lower()
+        request = requests.get(GTA_MANUFACTURER_LOGO_URL+manufacturer)
+
+        return request.text
+    except:
+        return False
 #Reads a spreedsheet for the rest of the information. As this is a point of truth we will
 #use this for the pricing. If the API above doesn't have a result, but the spreedsheet does,
 #we'll use this for the information and omit the exclusive fields
 def get_info_from_spreedsheet(search):
     try:
+        search = search.lower()
+
         #Let's get the column to find the row
         nameRange = GOOGLE_SPREADSHEET_SHEET+'!'+GOOGLE_SPREADSHEET_SEARCH_COLUMN+':'+GOOGLE_SPREADSHEET_SEARCH_COLUMN
-        request = requests.get('https://sheets.googleapis.com/v4/spreadsheets/'+GOOGLE_SPREADSHEET_ID+'/values/'+nameRange+'?key='+GOOGLE_API_KEY)
+        request = requests.get(GOOGLE_SPREADSHEET_API+GOOGLE_SPREADSHEET_ID+'/values/'+nameRange+'?key='+GOOGLE_API_KEY)
         cars = request.json() 
         cars = cars['values']
 
         #This is just a quick job anyway, too lazy to find a better method
         key = 1
         found = False
+        partialMatch = False
+        partialKey = 1 #Not used unless a partial match
         for value in cars:
             if search in value:
                 found = True
                 break
+            elif not partialMatch:
+                if search in value[0]:
+                    partialMatch = True
+                    partialKey = key
+
             key = key + 1
         
-        #If not found, lets search again via substrings
-        if not found:
-            key = 1
-            for value in cars:
-                if search in value[0]:
-                    found = True
-                    break
-                key = key + 1
 
+        #If not found, lets use the partial match
+        if not found and partialMatch:
+            key = partialKey
+            found = True
         #Just a case in case it doesn't find it
-        if not found:
+        elif not found:
             return False
 
         #Now lets get the row
         rowRange = nameRange = GOOGLE_SPREADSHEET_SHEET+'!'+str(key)+':'+str(key)
         
-        request = requests.get('https://sheets.googleapis.com/v4/spreadsheets/'+GOOGLE_SPREADSHEET_ID+'/values/'+rowRange+'?key='+GOOGLE_API_KEY)
+        request = requests.get(GOOGLE_SPREADSHEET_API+GOOGLE_SPREADSHEET_ID+'/values/'+rowRange+'?key='+GOOGLE_API_KEY)
         row = request.json()
         spreadsheetRow = {
             'name': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['NAME']],
@@ -95,8 +118,9 @@ def get_info_from_spreedsheet(search):
         return False
 
 #Formats the output into a discord embed
-def format_output(title, description, price, vclass='', seats='', tspeed='', speed='', acceleration='', braking='', handling='', image_url=''):    
-    output = discord.Embed(title=title, description=description)
+def format_output(brandName, carName, price, vclass='', seats='', tspeed='', speed='', acceleration='', braking='', handling='', image_url='', thumbnail_url=''):    
+    output = discord.Embed(title=carName)
+    output.set_author(name=brandName)
     output.color = EMBED_COLOR
     output.add_field(name='Price:', value=price, inline=False)
 
@@ -125,6 +149,9 @@ def format_output(title, description, price, vclass='', seats='', tspeed='', spe
     if(bool(image_url)):
         output.set_image(url=image_url)
 
+    if(bool(thumbnail_url)):
+        output.set_thumbnail(url=thumbnail_url)
+
     return output
 
 @client.event
@@ -143,37 +170,41 @@ async def on_message(message):
 
             api_info = get_info_from_api(search)
             spreadsheet_info = get_info_from_spreedsheet(search)
-            
+
             #If the API returned false, but we got information from the spreadsheet; lets search the API with the spreadsheet name
             if api_info == False and spreadsheet_info != False:
                 api_info = get_info_from_api(spreadsheet_info['name'].lower())
 
+            manufactorLogo = get_manufacturer_logo_from_api(spreadsheet_info['brand'])
+
             #If both the API and spreadsheet return valid values, proceed to use both
             if api_info != False and spreadsheet_info != False:  
                 output = format_output(
-                    title=spreadsheet_info['brand'], 
-                    description=spreadsheet_info['name'], 
+                    brandName=spreadsheet_info['brand'], 
+                    carName=spreadsheet_info['name'], 
                     price=spreadsheet_info['price'],
                     vclass=spreadsheet_info['class'],
-                    seats=spreadsheet_info['seats'] if 'seats' in api_info else spreadsheet_info['seats'],
+                    seats=spreadsheet_info['seats'] if 'seats' in api_info else '',
                     tspeed=api_info['topSpeed']['mph'] if 'topSpeed' in api_info and 'mph' in api_info['topSpeed'] else '',
                     speed=api_info['speed'] if 'speed' in api_info else '',
                     acceleration=api_info['acceleration'] if 'acceleration' in api_info else '',
                     braking=api_info['braking'] if 'braking' in api_info else '',
                     handling=api_info['handling'] if 'handling' in api_info else '',
-                    image_url=api_info['images']['frontQuarter'] if 'images' in api_info and 'frontQuarter' in api_info['images'] else spreadsheet_info['image']
+                    image_url=api_info['images']['frontQuarter'] if 'images' in api_info and 'frontQuarter' in api_info['images'] else spreadsheet_info['image'],
+                    thumbnail_url=manufactorLogo if manufactorLogo != False else ''
                 )
 
                 await message.channel.send(embed=output)
             #If only the spreadsheet is valid, use that
             elif spreadsheet_info != False:
                 output = format_output(
-                    title=spreadsheet_info['brand'], 
-                    description=spreadsheet_info['name'], 
+                    brandName=spreadsheet_info['brand'], 
+                    carName=spreadsheet_info['name'], 
                     price=spreadsheet_info['price'],
                     vclass=spreadsheet_info['class'],
                     seats=spreadsheet_info['seats'],
-                    image_url=spreadsheet_info['image'] if 'image' in spreadsheet_info else ''
+                    image_url=spreadsheet_info['image'] if 'image' in spreadsheet_info else '',
+                    thumbnail_url=manufactorLogo if manufactorLogo != False else ''
                 )
 
                 await message.channel.send(embed=output)
