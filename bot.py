@@ -90,7 +90,6 @@ def get_info_from_spreedsheet(search):
 
             key = key + 1
         
-
         #If not found, lets use the partial match
         if not found and partialMatch:
             key = partialKey
@@ -104,13 +103,18 @@ def get_info_from_spreedsheet(search):
         
         request = requests.get(GOOGLE_SPREADSHEET_API+GOOGLE_SPREADSHEET_ID+'/values/'+rowRange+'?key='+GOOGLE_API_KEY)
         row = request.json()
+
         spreadsheetRow = {
-            'name': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['NAME']],
-            'class': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['CLASS']],
-            'seats': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['SEATS']],
-            'price': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['PRICE']],
-            'brand': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['BRAND']],
-            'image': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['IMAGE']]
+            'name': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['NAME']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['NAME']) else '',
+            'class': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['CLASS']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['CLASS']) else '',
+            'seats': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['SEATS']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['SEATS']) else '',
+            'price': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['PRICE']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['PRICE']) else '',
+            'brand': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['BRAND']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['BRAND']) else '',
+            'image': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['IMAGE']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['IMAGE']) else '',
+            'carWeight': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['CAR_WEIGHT']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['CAR_WEIGHT']) else '',
+            'driveTrain': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['DRIVE_TRAIN']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['DRIVE_TRAIN']) else '',
+            'gears': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['GEARS']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['GEARS']) else '',
+            'carryWeight': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['CARRY_WEIGHT']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['CARRY_WEIGHT']) else '',
         }
 
         return spreadsheetRow
@@ -118,7 +122,7 @@ def get_info_from_spreedsheet(search):
         return False
 
 #Formats the output into a discord embed
-def format_output(brandName, carName, price, vclass='', seats='', tspeed='', speed='', acceleration='', braking='', handling='', image_url='', thumbnail_url=''):    
+def format_output(brandName, carName, price, vclass='', seats='', tspeed='', speed='', acceleration='', braking='', handling='', carWeight='', driveTrain='', gears='', carryWeight='', image_url='', thumbnail_url=''):    
     output = discord.Embed(title=carName)
     output.set_author(name=brandName)
     output.color = EMBED_COLOR
@@ -145,6 +149,18 @@ def format_output(brandName, carName, price, vclass='', seats='', tspeed='', spe
     
     if(bool(handling)):
         output.add_field(name='Handling:', value=handling)
+
+    if(bool(carWeight)):
+        output.add_field(name='Car Weight:', value=carWeight)
+    
+    if(bool(driveTrain)):
+        output.add_field(name='Drive Train:', value=driveTrain)
+    
+    if(bool(gears)):
+        output.add_field(name='Gears:', value=gears)
+    
+    if(bool(carryWeight)):
+        output.add_field(name='Carry Weight:', value=carryWeight)
     
     if(bool(image_url)):
         output.set_image(url=image_url)
@@ -153,6 +169,10 @@ def format_output(brandName, carName, price, vclass='', seats='', tspeed='', spe
         output.set_thumbnail(url=thumbnail_url)
 
     return output
+
+#Checks to see if an index is in the list
+def index_in_list(list, index):
+    return index < len(list) 
 
 @client.event
 async def on_ready():
@@ -170,12 +190,13 @@ async def on_message(message):
 
             api_info = get_info_from_api(search)
             spreadsheet_info = get_info_from_spreedsheet(search)
-
+            
             #If the API returned false, but we got information from the spreadsheet; lets search the API with the spreadsheet name
             if api_info == False and spreadsheet_info != False:
                 api_info = get_info_from_api(spreadsheet_info['name'].lower())
 
-            manufactorLogo = get_manufacturer_logo_from_api(spreadsheet_info['brand'])
+            if spreadsheet_info != False:
+                manufacturerLogo = get_manufacturer_logo_from_api(spreadsheet_info['brand'])
 
             #If both the API and spreadsheet return valid values, proceed to use both
             if api_info != False and spreadsheet_info != False:  
@@ -184,14 +205,18 @@ async def on_message(message):
                     carName=spreadsheet_info['name'], 
                     price=spreadsheet_info['price'],
                     vclass=spreadsheet_info['class'],
-                    seats=spreadsheet_info['seats'] if 'seats' in api_info else '',
+                    seats=api_info['seats'] if 'seats' in api_info else spreadsheet_info['seats'],
                     tspeed=api_info['topSpeed']['mph'] if 'topSpeed' in api_info and 'mph' in api_info['topSpeed'] else '',
                     speed=api_info['speed'] if 'speed' in api_info else '',
                     acceleration=api_info['acceleration'] if 'acceleration' in api_info else '',
                     braking=api_info['braking'] if 'braking' in api_info else '',
                     handling=api_info['handling'] if 'handling' in api_info else '',
+                    carWeight=spreadsheet_info['carWeight'] if 'carWeight' in spreadsheet_info else '',
+                    driveTrain=spreadsheet_info['driveTrain'] if 'driveTrain' in spreadsheet_info else '',
+                    gears=spreadsheet_info['gears'] if 'gears' in spreadsheet_info else '',
+                    carryWeight=spreadsheet_info['carryWeight'] if 'carryWeight' in spreadsheet_info else '',
                     image_url=api_info['images']['frontQuarter'] if 'images' in api_info and 'frontQuarter' in api_info['images'] else spreadsheet_info['image'],
-                    thumbnail_url=manufactorLogo if manufactorLogo != False else ''
+                    thumbnail_url=manufacturerLogo if manufacturerLogo != False else ''
                 )
 
                 await message.channel.send(embed=output)
@@ -203,8 +228,12 @@ async def on_message(message):
                     price=spreadsheet_info['price'],
                     vclass=spreadsheet_info['class'],
                     seats=spreadsheet_info['seats'],
+                    carWeight=spreadsheet_info['carWeight'] if 'carWeight' in spreadsheet_info else '',
+                    driveTrain=spreadsheet_info['driveTrain'] if 'driveTrain' in spreadsheet_info else '',
+                    gears=spreadsheet_info['gears'] if 'gears' in spreadsheet_info else '',
+                    carryWeight=spreadsheet_info['carryWeight'] if 'carryWeight' in spreadsheet_info else '',
                     image_url=spreadsheet_info['image'] if 'image' in spreadsheet_info else '',
-                    thumbnail_url=manufactorLogo if manufactorLogo != False else ''
+                    thumbnail_url=manufacturerLogo if manufacturerLogo != False else ''
                 )
 
                 await message.channel.send(embed=output)
