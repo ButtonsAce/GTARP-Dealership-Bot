@@ -28,7 +28,11 @@ GOOGLE_SPREADSHEET_COLUMN = {
     'SEATS': 6, #G
     'PRICE': 3, #D
     'BRAND': 9, #J
-    'IMAGE': 7 #H
+    'IMAGE': 7, #H
+    'CAR_WEIGHT': 10, #K
+    'DRIVE_TRAIN': 11, #L
+    'GEARS': 12, #M
+    'CARRY_WEIGHT': 13 #N
 }
 
 #API URLS
@@ -114,7 +118,7 @@ def get_info_from_spreedsheet(search):
             'carWeight': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['CAR_WEIGHT']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['CAR_WEIGHT']) else '',
             'driveTrain': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['DRIVE_TRAIN']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['DRIVE_TRAIN']) else '',
             'gears': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['GEARS']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['GEARS']) else '',
-            'carryWeight': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['CARRY_WEIGHT']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['CARRY_WEIGHT']) else '',
+            'vehicleStorage': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['VEHICLE_STORAGE']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['VEHICLE_STORAGE']) else '',
         }
 
         return spreadsheetRow
@@ -122,7 +126,7 @@ def get_info_from_spreedsheet(search):
         return False
 
 #Formats the output into a discord embed
-def format_output(brandName, carName, price, vclass='', seats='', tspeed='', speed='', acceleration='', braking='', handling='', carWeight='', driveTrain='', gears='', carryWeight='', image_url='', thumbnail_url=''):    
+def format_output(brandName, carName, price, vclass='', seats='', tspeed='', speed='', acceleration='', braking='', handling='', carWeight='', driveTrain='', gears='', vehicleStorage='', image_url='', thumbnail_url=''):    
     output = discord.Embed(title=carName)
     output.set_author(name=brandName)
     output.color = EMBED_COLOR
@@ -159,8 +163,8 @@ def format_output(brandName, carName, price, vclass='', seats='', tspeed='', spe
     if(bool(gears)):
         output.add_field(name='Gears:', value=gears)
     
-    if(bool(carryWeight)):
-        output.add_field(name='Carry Weight:', value=carryWeight)
+    if(bool(vehicleStorage)):
+        output.add_field(name='Vehicle Storage:', value=vehicleStorage)
     
     if(bool(image_url)):
         output.set_image(url=image_url)
@@ -214,7 +218,7 @@ async def on_message(message):
                     carWeight=spreadsheet_info['carWeight'] if 'carWeight' in spreadsheet_info else '',
                     driveTrain=spreadsheet_info['driveTrain'] if 'driveTrain' in spreadsheet_info else '',
                     gears=spreadsheet_info['gears'] if 'gears' in spreadsheet_info else '',
-                    carryWeight=spreadsheet_info['carryWeight'] if 'carryWeight' in spreadsheet_info else '',
+                    vehicleStorage=spreadsheet_info['vehicleStorage'] if 'vehicleStorage' in spreadsheet_info else '',
                     image_url=api_info['images']['frontQuarter'] if 'images' in api_info and 'frontQuarter' in api_info['images'] else spreadsheet_info['image'],
                     thumbnail_url=manufacturerLogo if manufacturerLogo != False else ''
                 )
@@ -231,7 +235,7 @@ async def on_message(message):
                     carWeight=spreadsheet_info['carWeight'] if 'carWeight' in spreadsheet_info else '',
                     driveTrain=spreadsheet_info['driveTrain'] if 'driveTrain' in spreadsheet_info else '',
                     gears=spreadsheet_info['gears'] if 'gears' in spreadsheet_info else '',
-                    carryWeight=spreadsheet_info['carryWeight'] if 'carryWeight' in spreadsheet_info else '',
+                    vehicleStorage=spreadsheet_info['vehicleStorage'] if 'vehicleStorage' in spreadsheet_info else '',
                     image_url=spreadsheet_info['image'] if 'image' in spreadsheet_info else '',
                     thumbnail_url=manufacturerLogo if manufacturerLogo != False else ''
                 )
