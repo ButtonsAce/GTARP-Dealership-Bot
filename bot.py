@@ -19,6 +19,10 @@ BOT_COMMAND = '!'
 #0x[HEX COLOR]
 EMBED_COLOR = 0x8f030f
 
+#Fallback Manufacturer Info
+MANUFACTURER_FALLBACK_NAME = 'Sanders Imports'
+MANUFACTURER_FALLBACK_LOGO_URL = 'https://i.imgur.com/AYEoAPX.png'
+
 #Update these settings based off your spreadsheet
 GOOGLE_SPREADSHEET_SHEET = 'Vehicles'
 GOOGLE_SPREADSHEET_SEARCH_COLUMN = 'B'
@@ -32,7 +36,7 @@ GOOGLE_SPREADSHEET_COLUMN = {
     'CAR_WEIGHT': 10, #K
     'DRIVE_TRAIN': 11, #L
     'GEARS': 12, #M
-    'CARRY_WEIGHT': 13 #N
+    'VEHICLE_STORAGE': 13 #N
 }
 
 #API URLS
@@ -61,6 +65,10 @@ def get_manufacturer_logo_from_api(manufacturer):
     try:
         manufacturer = manufacturer.lower()
         request = requests.get(GTA_MANUFACTURER_LOGO_URL+manufacturer)
+
+        #The API returns 'not found' instead of a 404. Don't worry, I don't like it either
+        if request.text == 'not found':
+            return MANUFACTURER_FALLBACK_LOGO_URL
 
         return request.text
     except:
@@ -118,9 +126,8 @@ def get_info_from_spreedsheet(search):
             'carWeight': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['CAR_WEIGHT']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['CAR_WEIGHT']) else '',
             'driveTrain': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['DRIVE_TRAIN']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['DRIVE_TRAIN']) else '',
             'gears': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['GEARS']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['GEARS']) else '',
-            'vehicleStorage': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['VEHICLE_STORAGE']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['VEHICLE_STORAGE']) else '',
+            'vehicleStorage': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['VEHICLE_STORAGE']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['VEHICLE_STORAGE']) else ''
         }
-
         return spreadsheetRow
     except:
         return False
@@ -128,7 +135,12 @@ def get_info_from_spreedsheet(search):
 #Formats the output into a discord embed
 def format_output(brandName, carName, price, vclass='', seats='', tspeed='', speed='', acceleration='', braking='', handling='', carWeight='', driveTrain='', gears='', vehicleStorage='', image_url='', thumbnail_url=''):    
     output = discord.Embed(title=carName)
-    output.set_author(name=brandName)
+
+    if(bool(brandName)):
+        output.set_author(name=brandName)
+    else:
+        output.set_author(name=MANUFACTURER_FALLBACK_NAME)
+
     output.color = EMBED_COLOR
     output.add_field(name='Price:', value=price, inline=False)
 
@@ -171,6 +183,8 @@ def format_output(brandName, carName, price, vclass='', seats='', tspeed='', spe
 
     if(bool(thumbnail_url)):
         output.set_thumbnail(url=thumbnail_url)
+    else:
+        output.set_thumbnail(url=MANUFACTURER_FALLBACK_LOGO_URL)
 
     return output
 
