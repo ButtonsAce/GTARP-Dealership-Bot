@@ -15,6 +15,9 @@ GOOGLE_SPREADSHEET_ID = os.getenv('GOOGLE_SPREADSHEET_ID')
 #If you wish to have a space, please add it here
 BOT_COMMAND = '!'
 
+#Flag to search the API for names first vs the spreadsheet. Enabling this could bring up vehicles that haven't been recorded in the spreadsheet, giving incorrect information
+SEARCH_API_FIRST = False
+
 #This sets the color of the discord embed.
 #0x[HEX COLOR]
 EMBED_COLOR = 0x8f030f
@@ -206,7 +209,11 @@ async def on_message(message):
             search = message.content
             search = search[int(len(BOT_COMMAND)):].lower().strip()
 
-            api_info = get_info_from_api(search)
+            if SEARCH_API_FIRST:
+                api_info = get_info_from_api(search)
+            else:
+                api_info = False
+                
             spreadsheet_info = get_info_from_spreedsheet(search)
             
             #If the API returned false, but we got information from the spreadsheet; lets search the API with the spreadsheet name
