@@ -137,7 +137,11 @@ def get_info_from_spreedsheet(search):
 
 #Formats the output into a discord embed
 def format_output(brandName, carName, price, vclass='', seats='', tspeed='', speed='', acceleration='', braking='', handling='', carWeight='', driveTrain='', gears='', vehicleStorage='', image_url='', thumbnail_url=''):    
-    output = discord.Embed(title=carName)
+    
+    if (bool(price)):
+        output = discord.Embed(title=carName, description=price)
+    else:
+        output = discord.Embed(title=carName)
 
     if(bool(brandName)):
         output.set_author(name=brandName)
@@ -145,11 +149,10 @@ def format_output(brandName, carName, price, vclass='', seats='', tspeed='', spe
         output.set_author(name=MANUFACTURER_FALLBACK_NAME)
 
     output.color = EMBED_COLOR
-    output.add_field(name='Price:', value=price, inline=False)
 
     #The following are all optional, if they aren't populated, they won't show up
     if(bool(vclass)):
-        output.add_field(name='Class:', value=vclass, inline=False)
+        output.add_field(name='Class:', value=vclass)
     
     if(bool(seats)):
         output.add_field(name='Seats:', value=seats)
@@ -213,7 +216,7 @@ async def on_message(message):
                 api_info = get_info_from_api(search)
             else:
                 api_info = False
-                
+
             spreadsheet_info = get_info_from_spreedsheet(search)
             
             #If the API returned false, but we got information from the spreadsheet; lets search the API with the spreadsheet name
