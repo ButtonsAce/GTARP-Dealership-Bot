@@ -1,6 +1,9 @@
 import discord
 import requests
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 client = discord.Client()
 #If you wish to hardcode the variables (for testing, it's a security risk if you do it for production), you can do that here
