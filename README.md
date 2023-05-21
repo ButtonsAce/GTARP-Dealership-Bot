@@ -12,6 +12,7 @@ Allows you to enter in a key and a search term and the bot will get the results 
 * Pip Packages
     * discord: `pip install -U discord.py`
     * requests: `pip install requests`
+    * dotenv: `pip install python-dotenv`
 
 ## Environment Variables
 
