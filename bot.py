@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client = discord.Client()
+client = discord.Client(intents=discord.Intents.default())
 #If you wish to hardcode the variables (for testing, it's a security risk if you do it for production), you can do that here
 DISCORD_BOT_TOKEN = os.getenv('DISCORD_BOT_TOKEN')
 GOOGLE_API_KEY = os.getenv('GOOGLE_API')
@@ -22,24 +22,28 @@ BOT_COMMAND = '!'
 #0x[HEX COLOR]
 EMBED_COLOR = 0x8f030f
 
+DEALERSHIP_NAME = 'Sanders Motorcycles'
+
 #Fallback Manufacturer Info
-MANUFACTURER_FALLBACK_NAME = 'Sanders Imports'
+MANUFACTURER_FALLBACK_NAME = DEALERSHIP_NAME
 MANUFACTURER_FALLBACK_LOGO_URL = 'https://i.imgur.com/AYEoAPX.png'
 
 #Update these settings based off your spreadsheet
-GOOGLE_SPREADSHEET_SHEET = 'Vehicles'
-GOOGLE_SPREADSHEET_SEARCH_COLUMN = 'B'
+GOOGLE_SPREADSHEET_SHEET = 'Sheet1'
+GOOGLE_SPREADSHEET_SEARCH_COLUMN = 'E'
 GOOGLE_SPREADSHEET_COLUMN = {
-    'NAME': 0, #A
-    'CLASS': 5, #F
-    'SEATS': 6, #G
-    'PRICE': 3, #D
-    'BRAND': 9, #J
-    'IMAGE': 7, #H
-    'CAR_WEIGHT': 10, #K
-    'DRIVE_TRAIN': 11, #L
-    'GEARS': 12, #M
-    'VEHICLE_STORAGE': 13 #N
+    'NAME': 3, #C
+    'CLASS': 2, #B
+    'SEATS': 13, #N
+    'PRICE': 6, #G
+    'IMAGE': 14, #O
+    'TRUNK_CAP': 9, #J
+    'TRUNK_SLOT': 10, #K
+    'DASH_CAP': 11, #L
+    'DASH_SLOT': 12, #M
+    'FUEL_CAP': 7, #H
+    'FUEL_ECO': 8, #I
+    'BRAND_LOGO': 15 #p
 }
 
 #API URLS
@@ -57,6 +61,7 @@ def get_info_from_spreadsheet(search):
         #Let's get the column to find the row
         nameRange = GOOGLE_SPREADSHEET_SHEET+'!'+GOOGLE_SPREADSHEET_SEARCH_COLUMN+':'+GOOGLE_SPREADSHEET_SEARCH_COLUMN
         request = requests.get(GOOGLE_SPREADSHEET_API+GOOGLE_SPREADSHEET_ID+'/values/'+nameRange+'?key='+GOOGLE_API_KEY)
+
         cars = request.json() 
         cars = cars['values']
 
@@ -95,27 +100,49 @@ def get_info_from_spreadsheet(search):
             'class': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['CLASS']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['CLASS']) else '',
             'seats': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['SEATS']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['SEATS']) else '',
             'price': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['PRICE']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['PRICE']) else '',
-            'brand': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['BRAND']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['BRAND']) else '',
             'image': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['IMAGE']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['IMAGE']) else '',
-            'carWeight': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['CAR_WEIGHT']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['CAR_WEIGHT']) else '',
-            'driveTrain': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['DRIVE_TRAIN']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['DRIVE_TRAIN']) else '',
-            'gears': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['GEARS']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['GEARS']) else '',
-            'vehicleStorage': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['VEHICLE_STORAGE']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['VEHICLE_STORAGE']) else ''
+            'truckCap': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['TRUNK_CAP']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['TRUNK_CAP']) else '',
+            'trunkSlot': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['TRUNK_SLOT']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['TRUNK_SLOT']) else '',
+            'dashCap': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['DASH_CAP']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['DASH_CAP']) else '',
+            'dashSlot': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['DASH_SLOT']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['DASH_SLOT']) else '',
+            'fuelCap': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['FUEL_CAP']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['FUEL_CAP']) else '',
+            'fuelEco': row['values'][0][GOOGLE_SPREADSHEET_COLUMN['FUEL_ECO']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['FUEL_ECO']) else '',
+            'brand_logo':  row['values'][0][GOOGLE_SPREADSHEET_COLUMN['BRAND_LOGO']] if index_in_list(row['values'][0], GOOGLE_SPREADSHEET_COLUMN['BRAND_LOGO']) else ''
         }
+
         return spreadsheetRow
     except:
         return False
 
 #Formats the output into a discord embed
-def format_output(brandName, carName, price, vclass='', seats='', tspeed='', speed='', acceleration='', braking='', handling='', carWeight='', driveTrain='', gears='', vehicleStorage='', image_url='', thumbnail_url=''):    
+def format_output(
+        header,
+        carName,
+        price,
+        vclass='',
+        seats='',
+        tspeed='',
+        speed='',
+        acceleration='',
+        braking='',
+        handling='',
+        truckCapacity='',
+        trunkSlot='',
+        dashboardCapacity='',
+        dashboardSlot='',
+        fuelCapacity='',
+        fuelEco='',
+        image_url='',
+        thumbnail_url=''
+    ):    
     
     if (bool(price)):
         output = discord.Embed(title=carName, description=price)
     else:
         output = discord.Embed(title=carName)
 
-    if(bool(brandName)):
-        output.set_author(name=brandName)
+    if(bool(header)):
+        output.set_author(name=header)
     else:
         output.set_author(name=MANUFACTURER_FALLBACK_NAME)
 
@@ -143,18 +170,24 @@ def format_output(brandName, carName, price, vclass='', seats='', tspeed='', spe
     if(bool(handling)):
         output.add_field(name='Handling:', value=handling)
 
-    if(bool(carWeight)):
-        output.add_field(name='Car Weight:', value=carWeight)
-    
-    if(bool(driveTrain)):
-        output.add_field(name='Drive Train:', value=driveTrain)
-    
-    if(bool(gears)):
-        output.add_field(name='Gears:', value=gears)
-    
-    if(bool(vehicleStorage)):
-        output.add_field(name='Vehicle Storage:', value=vehicleStorage)
-    
+    if(bool(truckCapacity)):
+        output.add_field(name='Trunk Capacity:', value=truckCapacity)
+
+    if(bool(trunkSlot)):
+        output.add_field(name='Trunk Storage:', value=trunkSlot)
+
+    if(bool(dashboardCapacity)):
+        output.add_field(name='Dashboard Capacity:', value=dashboardCapacity)
+
+    if(bool(dashboardSlot)):
+        output.add_field(name='Dashboard Storage:', value=dashboardSlot)
+
+    if(bool(fuelCapacity)):
+        output.add_field(name='Fuel Capacity:', value=fuelCapacity)
+
+    if(bool(fuelEco)):
+        output.add_field(name='Fuel Eco:', value=fuelEco)
+
     if(bool(image_url)):
         output.set_image(url=image_url)
 
@@ -188,17 +221,19 @@ async def on_message(message):
             #If spreadsheet return valid values
             if spreadsheet_info != False:  
                 output = format_output(
-                    brandName=spreadsheet_info['brand'], 
+                    header=DEALERSHIP_NAME, 
                     carName=spreadsheet_info['name'], 
                     price=spreadsheet_info['price'],
                     vclass=spreadsheet_info['class'],
                     seats=spreadsheet_info['seats'],
-                    carWeight=spreadsheet_info['carWeight'] if 'carWeight' in spreadsheet_info else '',
-                    driveTrain=spreadsheet_info['driveTrain'] if 'driveTrain' in spreadsheet_info else '',
-                    gears=spreadsheet_info['gears'] if 'gears' in spreadsheet_info else '',
-                    vehicleStorage=spreadsheet_info['vehicleStorage'] if 'vehicleStorage' in spreadsheet_info else '',
+                    truckCapacity=spreadsheet_info['truckCap'] if 'truckCap' in spreadsheet_info else '',
+                    trunkSlot=spreadsheet_info['trunkSlot'] if 'trunkSlot' in spreadsheet_info else '',
+                    dashboardCapacity=spreadsheet_info['dashCap'] if 'dashCap' in spreadsheet_info else '',
+                    dashboardSlot=spreadsheet_info['dashSlot'] if 'dashSlot' in spreadsheet_info else '',
+                    fuelCapacity=spreadsheet_info['fuelCap'] if 'fuelCap' in spreadsheet_info else '',
+                    fuelEco=spreadsheet_info['fuelEco'] if 'fuelEco' in spreadsheet_info else '',
                     image_url=spreadsheet_info['image'] if 'image' in spreadsheet_info else '',
-                    thumbnail_url=manufacturerLogo if manufacturerLogo != False else ''
+                    thumbnail_url=spreadsheet_info['brand_logo'] if 'brand_logo' in spreadsheet_info else '',
                 )
 
                 await message.channel.send(embed=output)
