@@ -15,9 +15,6 @@ GOOGLE_SPREADSHEET_ID = os.getenv('GOOGLE_SPREADSHEET_ID')
 #If you wish to have a space, please add it here
 BOT_COMMAND = '!'
 
-#Flag to search the API for names first vs the spreadsheet. Enabling this could bring up vehicles that haven't been recorded in the spreadsheet, giving incorrect information
-SEARCH_API_FIRST = False
-
 #This sets the color of the discord embed.
 #0x[HEX COLOR]
 EMBED_COLOR = 0x8f030f
@@ -45,41 +42,12 @@ GOOGLE_SPREADSHEET_COLUMN = {
 #API URLS
 GOOGLE_SPREADSHEET_API = 'https://sheets.googleapis.com/v4/spreadsheets/'
 
-GTA_API_URL = 'https://gta.now.sh/api/'
-GTA_VEHICLE_INFO_URL = GTA_API_URL+'vehicles/'
-GTA_MANUFACTURER_LOGO_URL = GTA_API_URL+'vehicles/manufacturer/'
-
 ####################################################
 #################### END BLOCK #####################
 ####################################################
 
-#Uses the GTA API to get information for the vehicles
-#Not all the information is here, but we do get exclusive information here
-def get_info_from_api(search):
-    try:
-        search = search.lower()
-        request = requests.get(GTA_VEHICLE_INFO_URL+search)
-        return request.json()
-    except:
-        return False
-
-#Uses the GTA API to get the manufacturer's logo
-def get_manufacturer_logo_from_api(manufacturer):
-    try:
-        manufacturer = manufacturer.lower()
-        request = requests.get(GTA_MANUFACTURER_LOGO_URL+manufacturer)
-
-        #The API returns 'not found' instead of a 404. Don't worry, I don't like it either
-        if request.text == 'not found':
-            return MANUFACTURER_FALLBACK_LOGO_URL
-
-        return request.text
-    except:
-        return False
-#Reads a spreedsheet for the rest of the information. As this is a point of truth we will
-#use this for the pricing. If the API above doesn't have a result, but the spreedsheet does,
-#we'll use this for the information and omit the exclusive fields
-def get_info_from_spreedsheet(search):
+#Reads a spreadsheet for the rest of the information.
+def get_info_from_spreadsheet(search):
     try:
         search = search.lower()
 
@@ -212,44 +180,10 @@ async def on_message(message):
             search = message.content
             search = search[int(len(BOT_COMMAND)):].lower().strip()
 
-            if SEARCH_API_FIRST:
-                api_info = get_info_from_api(search)
-            else:
-                api_info = False
+            spreadsheet_info = get_info_from_spreadsheet(search)
 
-            spreadsheet_info = get_info_from_spreedsheet(search)
-            
-            #If the API returned false, but we got information from the spreadsheet; lets search the API with the spreadsheet name
-            if api_info == False and spreadsheet_info != False:
-                api_info = get_info_from_api(spreadsheet_info['name'].lower())
-
-            if spreadsheet_info != False:
-                manufacturerLogo = get_manufacturer_logo_from_api(spreadsheet_info['brand'])
-
-            #If both the API and spreadsheet return valid values, proceed to use both
-            if api_info != False and spreadsheet_info != False:  
-                output = format_output(
-                    brandName=spreadsheet_info['brand'], 
-                    carName=spreadsheet_info['name'], 
-                    price=spreadsheet_info['price'],
-                    vclass=spreadsheet_info['class'],
-                    seats=api_info['seats'] if 'seats' in api_info else spreadsheet_info['seats'],
-                    tspeed=api_info['topSpeed']['mph'] if 'topSpeed' in api_info and 'mph' in api_info['topSpeed'] else '',
-                    speed=api_info['speed'] if 'speed' in api_info else '',
-                    acceleration=api_info['acceleration'] if 'acceleration' in api_info else '',
-                    braking=api_info['braking'] if 'braking' in api_info else '',
-                    handling=api_info['handling'] if 'handling' in api_info else '',
-                    carWeight=spreadsheet_info['carWeight'] if 'carWeight' in spreadsheet_info else '',
-                    driveTrain=spreadsheet_info['driveTrain'] if 'driveTrain' in spreadsheet_info else '',
-                    gears=spreadsheet_info['gears'] if 'gears' in spreadsheet_info else '',
-                    vehicleStorage=spreadsheet_info['vehicleStorage'] if 'vehicleStorage' in spreadsheet_info else '',
-                    image_url=api_info['images']['frontQuarter'] if 'images' in api_info and 'frontQuarter' in api_info['images'] else spreadsheet_info['image'],
-                    thumbnail_url=manufacturerLogo if manufacturerLogo != False else ''
-                )
-
-                await message.channel.send(embed=output)
-            #If only the spreadsheet is valid, use that
-            elif spreadsheet_info != False:
+            #If spreadsheet return valid values
+            if spreadsheet_info != False:  
                 output = format_output(
                     brandName=spreadsheet_info['brand'], 
                     carName=spreadsheet_info['name'], 
