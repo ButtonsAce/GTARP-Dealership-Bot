@@ -5,7 +5,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client = discord.Client(intents=discord.Intents.default())
+intents = discord.Intents.default()
+intents.message_content = True
+
+client = discord.Client(intents=intents)
 #If you wish to hardcode the variables (for testing, it's a security risk if you do it for production), you can do that here
 DISCORD_BOT_TOKEN = os.getenv('DISCORD_BOT_TOKEN')
 GOOGLE_API_KEY = os.getenv('GOOGLE_API')
