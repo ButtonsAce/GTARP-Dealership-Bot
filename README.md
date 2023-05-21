@@ -2,7 +2,7 @@
 
 ## Features
 
-Allows you to enter in a key and a search term and the bot will get the results of the vehicle based on a combination of the the unoffical GTA RP API and a specified Google Sheet. 
+Allows you to enter in a key and a search term and the bot will get the results of the vehicle based on a specified Google Sheet. 
 
 ## Requirements
 
