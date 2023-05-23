@@ -25,7 +25,7 @@ BOT_COMMAND = '!'
 #0x[HEX COLOR]
 EMBED_COLOR = 0x8f030f
 
-DEALERSHIP_NAME = 'Sanders Motorcycles'
+DEALERSHIP_NAME = 'Sanders Autos'
 
 #Fallback Manufacturer Info
 MANUFACTURER_FALLBACK_NAME = DEALERSHIP_NAME
